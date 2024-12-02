@@ -22,21 +22,26 @@ func main() {
 		}
 	}
 
-	example := [][]int{
-		{7, 6, 4, 2, 1},
-		{1, 2, 7, 8, 9},
-		{9, 7, 6, 2, 1},
-		{1, 3, 2, 4, 5},
-		{8, 6, 4, 4, 1},
-		{1, 3, 6, 7, 9},
-	}
+	// example := [][]int{
+	// 	{7, 6, 4, 2, 1},
+	// 	{1, 2, 7, 8, 9},
+	// 	{9, 7, 6, 2, 1},
+	// 	{1, 3, 2, 4, 5},
+	// 	{8, 6, 4, 4, 1},
+	// 	{1, 3, 6, 7, 9},
+	// }
 
 	var safeReports int
-	for _, report := range example {
+	for _, report := range reports {
 		if isSafe(report) { safeReports++ }
 	}
 
 	fmt.Println(safeReports)
+
+	// for _, item := range example {
+	// 	fmt.Println(remove(item, 1))
+
+	// }
 }
 
 func splitLines(input string) []string {
@@ -59,55 +64,77 @@ func parseIntSlice(input string) []int {
 
 func isSafe(target []int) bool {
 	if (isAsc(target) || isDesc(target)) {
-		if isAcceptableDiff(target) {
-			fmt.Printf("%d: Safe\n", target)
+		isGood, _ := isAcceptableDiff(target)
+		if isGood {
+			fmt.Printf("%d: Safe (already modified)\n", target)
 			return true
+		} else {
+			fmt.Printf("%d: Unsafe - (already modified) not diff compliant\n", target)
+			return false
 		}
 	}
 
+	asc, _ := isAscending(target)
+	desc, _ := isDescending(target)
+
+	if (asc || desc) {
+		isGood, index := isAcceptableDiff(target)
+		if isGood {
+			fmt.Printf("%d: Safe\n", target)
+			return true
+		} else {
+			sec, _ := isAcceptableDiff(remove(target, index))
+			if sec {
+				fmt.Printf("%d: Safe\n", target)
+				return true
+			}
+			
+			fmt.Printf("%d: Unsafe - not diff compliant\n", target)
+			return false
+		}
+	}
+
+	fmt.Printf("%d: Unsafe - not asc or desc\n", target)
 	return false
 }
 
 func isAsc(target []int) bool {
 	asc, ascIndex := isAscending(target)
 	if asc {
-		// fmt.Printf("%d: Safe - Ascending\n", target)
 		return true
 	} else {
 		ascRetry := remove(target, ascIndex)
 
 		secondAsc, _ := isAscending(ascRetry)
 
-		if secondAsc { 
-			// fmt.Printf("%d: Safe (modified) - Ascending\n", ascRetry)
+		if secondAsc {
 			return true
 		}
 	}
-	fmt.Printf("%d: Unsafe - Not ascending, can't be modified\n", target)
 	return false
 }
 
 func isDesc(target []int) bool {
 	desc, descIndex := isDescending(target)
 	if desc {
-		// fmt.Printf("%d: Safe - Descending\n", target)
 		return true
 	} else {
 		descRetry := remove(target, descIndex)
 
 		secondDesc, _ := isDescending(descRetry)
 
-		if secondDesc { 
-			// fmt.Printf("%d: Safe (modified) - Descending\n", descRetry)
+		if secondDesc {
 			return true
 		}
 	}
-	fmt.Printf("%d: Unsafe - Not descending, can't be modified\n", target)
 	return false
 }
 
 func remove(s []int, index int) []int {
-	return append(s[:index], s[index+1:]...)
+	var ret []int
+	ret = append(ret, s[:index]...)
+	ret = append(ret, s[index+1:]...)
+	return ret
 }
 
 func isAscending(target []int) (bool, int) {
@@ -160,7 +187,7 @@ func isDescending(target []int) (bool, int) {
 	return true, 0
 }
 
-func isAcceptableDiff(target []int) bool {
+func isAcceptableDiff(target []int) (bool, int) {
 	current := 0
 	last := 0
 
@@ -173,17 +200,24 @@ func isAcceptableDiff(target []int) bool {
 		}
 		
 		if current == last {
-			fmt.Printf("%d: Unsafe - Two equal values\n", target)
-			return false
-		} else if (current - last) > 3 {
-			fmt.Printf("%d: Unsafe - Too high difference\n", target)
-			return false
-		} else if (last - current) > 3 {
-			fmt.Printf("%d: Unsafe - Too high difference\n", target)
-			return false
+			// fmt.Printf("%d: Unsafe - Two equal values\n", target)
+			return false, i
+		} else if absval(current - last) > 3 {
+			// fmt.Printf("%d: Unsafe - Too high difference\n", target)
+			return false, i
+		} else if absval(last - current) > 3 {
+			// fmt.Printf("%d: Unsafe - Too high difference\n", target)
+			return false, i
 		}
 
 		last = current
 	}
-	return true
+	return true, 0
+}
+
+func absval(x int) int {
+	if x < 0 {
+		return 0 - x
+	}
+	return x
 }
